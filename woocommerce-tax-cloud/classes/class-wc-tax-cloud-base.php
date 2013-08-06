@@ -36,8 +36,8 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  *
  * @since 1.0
  */
-require_once dirname( __FILE__ ) . '/class-wc-red-markdown.php';
-class REDEBase {
+
+class WC_Tax_Cloud_Base {
 
 	/** @var string, the name of this plugin, to be set in the inheriting class */
 	public $name;
@@ -72,17 +72,10 @@ class REDEBase {
 
 		$this->paths = new stdClass();
 
-		$this->paths->base 				= str_replace('classes','',dirname( __FILE__ ));
+		$this->paths->base 				= dirname( __FILE__ ) . "/../";
 		$this->paths->css              	= $this->paths->base . 'templates/css/';
-		$this->paths->assets            = $this->paths->base . 'assets/'; 
-		$this->paths->data              = $this->paths->assets . 'data/';
-		$this->paths->js               	= $this->paths->assets . 'javascripts/'; 
-		$this->paths->css               = $this->paths->assets . 'stylesheets/'; 
-		$this->paths->templates        	= $this->paths->base . 'templates/';
-
-		$this->paths->js_url 			= $this->red_join("/", plugins_url(), $this->name, "assets", "javascripts") . "/";
-		$this->paths->css_url 			= $this->red_join("/", plugins_url(), $this->name, "assets", "stylesheets") . "/";
-		$this->paths->data_url 			= $this->red_join("/", plugins_url(), $this->name, "assets", "data") . "/";
+	    $this->paths->js               	= $this->paths->base . 'assets/js/'; 
+	    $this->paths->templates        	= $this->paths->base . 'templates/';
 	    
 	    $wp_template     	 			= get_template();
 	    $this->paths->wp_theme_root    	= get_theme_root( $wp_template );
@@ -104,63 +97,12 @@ class REDEBase {
 		$this->settings = get_option($this->prefix.'settings');
 	}
 	/**
-	 * Detect http setting?
-	 *
-	 * @return bool 
-	 * @since 1.0
-	 */
-	public function red_is_https() {
-		if (
-	      (! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') ||
-	      $_SERVER['SERVER_PORT'] == 443
-	    ) {
-	      return true;
-	    } else {
-	      return false;
-	    }
-	}
-	/**
-	 * Return the current, full url including URI String
-	 *
-	 * @return string the full URL
-	 * @since 1.0
-	 */
-	public function red_current_url() {
-		$s = $this->red_is_https() ? 's' : '';
-		$prot = substr( strtolower( $_SERVER['SERVER_PROTOCOL'] ), 0, strpos($_SERVER['SERVER_PROTOCOL'],'/') ).$s;
-		$port = ($_SERVER['SERVER_PORT'] == '80') ? '' : (':'.$_SERVER['SERVER_PORT']);
-		return $prot . '://' . $_SERVER['SERVER_NAME'] . $port . $_SERVER['REQUEST_URI'];
-	}
-	public function red_help_url() {
-		$url = $this->red_current_url();
-		if (strpos($url,'?') !== false) {
-			$url .= "&show_help=true";
-		} else {
-			$url .= "?show_help=true";
-		}
-		return $url;
-	}
-	/**
-	 * Similar to File.join in Ruby, takes variable arguments, the first is the sep
-	 * means you don't have to create an array first.
-	 *
-	 * @param string sep
-	 * @param mixed ... any number of arguments to join together
-	 * @return string joined elements
-	 * @since 1.0
-	 */
-	public function red_join($sep) {
-		$list = func_get_args();
-		return join($sep,array_slice( $list, 1) );
-	}
-	/**
 	 * Default wp_head functions.
 	 *
 	 * @since 1.0
 	 */
 	public function red_wp_head() {
 		$less = false;
-		$throw_error = true;
 		foreach ( $this->styles as $handle=>$path ) {
 			if ( strpos($path,'.less') !== false) {
 				$less = true;
@@ -174,15 +116,16 @@ class REDEBase {
 			}
 		}
 		if ( $less ) {
+			$assets = dirname( __FILE__ ) . "/../assets/javascripts/";
 			$name = "less.min.js";
-			if ( file_exists($this->paths->js.$name) ) {
+			if ( file_exists($assets.$name) ) {
 				?>
-					<script type="text/javascript" src="<?php echo $this->paths->js_url . $name ?>"></script>
+					<script type="text/javascript" src="<?php echo plugins_url() . "/{$this->name}/assets/javascripts/$name" ?>"></script>
 				<?php
 				return true;
 			} else {
 				if ($throw_error) {
-					throw new Exception("File $name could not be found " . $this->paths->js_url . "$name", -1);
+					throw new Exception("File $name could not be found $assets/$name", -1);
 				} else {
 					return false;
 				}
@@ -191,7 +134,6 @@ class REDEBase {
 	}
 	public function red_wp_admin_head() {
 		$less = false;
-		$throw_error = true;
 		foreach ( $this->styles as $handle=>$path ) {
 			if ( strpos($path,'.less') !== false) {
 				$less = true;
@@ -205,15 +147,16 @@ class REDEBase {
 			}
 		}
 		if ( $less ) {
+			$assets = dirname( __FILE__ ) . "/../assets/javascripts/";
 			$name = "less.min.js";
-			if ( file_exists($this->paths->js.$name) ) {
+			if ( file_exists($assets.$name) ) {
 				?>
-					<script type="text/javascript" src="<?php echo $this->paths->js_url . $name ?>"></script>
+					<script type="text/javascript" src="<?php echo plugins_url() . "/{$this->name}/assets/javascripts/$name" ?>"></script>
 				<?php
 				return true;
 			} else {
 				if ($throw_error) {
-					throw new Exception("File $name could not be found " . $this->paths->js_url . "$name", -1);
+					throw new Exception("File $name could not be found $assets/$name", -1);
 				} else {
 					return false;
 				}
@@ -272,12 +215,13 @@ class REDEBase {
 			}
 			return;
 		}
-		if ( file_exists($this->paths->js.$name) ) {
-			wp_register_script( $this->red_hyphenize($name), $this->paths->js_url . "$name");
+		$assets = dirname( __FILE__ ) . "/../assets/javascripts/";
+		if ( file_exists($assets.$name) ) {
+			wp_register_script( $this->red_hyphenize($name), plugins_url() . "/{$this->name}/assets/javascripts/$name");
 			return true;
 		} else {
 			if ($throw_error) {
-				throw new Exception("File $name could not be found " . $this->paths->js_url . " $name", -1);
+				throw new Exception("File $name could not be found $assets/$name", -1);
 			} else {
 				return false;
 			}
@@ -298,12 +242,13 @@ class REDEBase {
 			}
 			return;
 		}
-		if ( file_exists($this->paths->css.$name) ) {
-			$this->styles[$this->red_hyphenize( $this->prefix.$name)] = $this->paths->css_url.$name;
+		$assets = dirname( __FILE__ ) . "/../assets/stylesheets/";
+		if ( file_exists($assets.$name) ) {
+			$this->styles[$this->red_hyphenize( $this->prefix.$name)] = plugins_url() . "/{$this->name}/assets/stylesheets/$name";
 			return true;
 		} else {
 			if ($throw_error) {
-				throw new Exception("File $name could not be found " . $this->paths->css_url . "/$name", -1);
+				throw new Exception("File $name could not be found $assets/$name", -1);
 			} else {
 				return false;
 			}
@@ -502,20 +447,6 @@ class REDEBase {
 		return $default;
 	}
 	/**
-	 * Get something from $array, tests for key set first, if it is empty returns default.
-	 *
-	 * @since 1.0
-	 * @param string key
-	 * @param mixed default value if not found
-	 * @return mixed
-	 */
-	public function red_not_empty_a($arr, $key, $default=null) {
-		if ( isset( $arr[$key] ) && ! empty( $arr[$key] ) ) {
-			return $arr[$key];
-		}
-		return $default;
-	}
-	/**
 	 * sanitize a string into a slug
 	 *
 	 * @since 1.0
@@ -649,9 +580,8 @@ class REDEBase {
 	 * @param array hash of key value pairs
 	 * @return string the rendered template
 	 */
-	public function red_render_template($template_name, $vars_in_scope=array(), $force_php = false) {
+	public function red_render_template($template_name, $vars_in_scope=array()) {
 		global $woocommerce,$wpdb, $user_ID;
-		$original_vars_in_scope = $vars_in_scope;
 	    $vars_in_scope['__VIEW__'] = $template_name; //could be user-files.php or somedir/user-files.php
 	    $vars_in_scope['plugin'] = $this;
 	                                                 
@@ -672,15 +602,7 @@ class REDEBase {
 	    ob_start();
 
 	    try {
-	      if ( strpos( $template_name, '.php') !== false || $force_php == true ) {
-	      	include $template_path;
-	      } else if ( strpos( $template_name, '.md') !== false ) {
-	      	// We want to support php in the template
-	      	$template_file_contents = $this->red_render_template($template_name, $original_vars_in_scope, true);
-	      	echo WC_Red_Markdown( $template_file_contents );
-	      } else {
-	      	include $template_path; // support any kind of template but without special treatment
-	      }
+	      include $template_path;
 	      $content = ob_get_contents();
 	      ob_end_clean();
 	      if (function_exists('apply_filters'))
@@ -782,7 +704,7 @@ class REDEBase {
 	/***************************************************************************/
 	public function red_label_tag($args) {
 		$name = $this->red_a($args,'name');
-		$content = $this->red_a($args,'label');
+		$content = __( $this->red_a($args,'label') , $this->td ); // i.e. run it through the translation
 		$classes = $this->red_a($args,'classes','');
 		return "<label for='" . esc_attr( $name ) . "' class='" . esc_attr( $classes ) . "'>" . esc_html( $content ) . "</label>";
 	}
@@ -807,12 +729,11 @@ class REDEBase {
 	public function red_checkbox_tag( $args, $wrap = null ) {
 		$name = $this->red_a($args,'name');
 		if ($wrap) {
-			if ( strpos($name,'[') != false ) {
-				$tname = substr( $name, 0, strpos($name,'[') );
-				$rpart = substr($name, strpos($name, '['));
-				$name = "{$wrap}[{$tname}]{$rpart}"; 
+			if (strpos($name,'[') != false ) {
+				$tname = substr($name,0,strpos($name,'['));
+				$name = "$wrap[$tname]" . substr($name,strpos($name,'['));
 			} else {
-				$name = "{$wrap}[{$name}]";
+				$name = "$wrap[$name]";
 			}
 		}
 
@@ -826,12 +747,11 @@ class REDEBase {
 
 		$name = $this->red_a($args,'name');
 		if ($wrap) {
-			if ( strpos($name,'[') != false ) {
-				$tname = substr( $name, 0, strpos($name,'[') );
-				$rpart = substr($name, strpos($name, '['));
-				$name = "{$wrap}[{$tname}]{$rpart}"; 
+			if (strpos($name,'[') != false ) {
+				$tname = substr($name,0,strpos($name,'['));
+				$name = "$wrap[$tname]" . substr($name,strpos($name,'['));
 			} else {
-				$name = "{$wrap}[{$name}]";
+				$name = "$wrap[$name]";
 			}
 		}
 		$value = $this->red_a($args,'value','');
@@ -845,12 +765,11 @@ class REDEBase {
 
 		$name = $this->red_a($args,'name');
 		if ($wrap) {
-			if ( strpos($name,'[') != false ) {
-				$tname = substr( $name, 0, strpos($name,'[') );
-				$rpart = substr($name, strpos($name, '['));
-				$name = "{$wrap}[{$tname}]{$rpart}"; 
+			if (strpos($name,'[') != false ) {
+				$tname = substr($name,0,strpos($name,'['));
+				$name = "$wrap[$tname]" . substr($name,strpos($name,'['));
 			} else {
-				$name = "{$wrap}[{$name}]";
+				$name = "$wrap[$name]";
 			}
 		}
 		$value = $this->red_a($args,'value','');
@@ -870,42 +789,6 @@ class REDEBase {
 		$content .= "</select>\n";
 		return $content;
 	} 
-	public function red_to_std($arr) {
-		$obj = new stdClass();
-		foreach ( $arr as $key=>$value ) {
-			if (is_array($value))
-				$obj->{$key} = $this->red_to_std($value);
-			else
-				$obj->{$key} = $value;
-		}
-		return $obj;
-	}
-	public function red_std_to_array( $std ) {
-		$arr = array();
-		foreach ($std as $key=>$value) {
-			if (is_numeric($key))
-				$key = intval($key);
-			if ( is_object($value) )
-				$value = $this->red_std_to_array($value);
-			$arr[$key] = $value;
-		}
-		return $arr;
-	}
-	public function red_convert_array_to_xml($arr) {
-		$xml = '';
-		foreach ($arr as $tag=>$value) {
-			if (is_array($value)) {
-				$value = $this->red_convert_array_to_xml($value);
-				$xml .= "<$tag>$value</$tag>\n";
-			} else {
-				$xml .= "<$tag>$value</$tag>\n";
-			}
-		}
-		return $xml;
-	}
-	public function red_write_data( $id, $text ) {
-		$path = $this->paths->data . $id;
-	}
 	public function red_hidden_form_fields( $action ) {
 		$output = wp_nonce_field($action,'_wpnonce',true,false);
 		return $output;

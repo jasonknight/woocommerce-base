@@ -1,0 +1,147 @@
+#!/usr/bin/env php
+<?php
+define( 'ABSPATH', true );
+require_once dirname( __FILE__ ) . "/classes/class-rede-base.php";
+require_once dirname( __FILE__ ) . "/spyc/Spyc.php";
+
+$Version 						= 1.0;
+$Args							= $_SERVER['argv'];
+$BaseConf 						= array();
+$BaseConf['plugin_name']		= $Args[1];
+$Base 							= new REDE_Base();
+$BaseConf['class_file']			= $Base->red_class_fileify($BaseConf['plugin_name']);
+$BaseConf['class_name']			= $Base->red_classify($BaseConf['class_file']);
+$BaseConf['main_file'] 			= $BaseConf['plugin_name'] . ".php";
+$ConfFile						= $BaseConf['plugin_name'] . ".wcb";
+
+$conf_exists 				= file_exists( $PluginName . '/' . $ConfFile) == true ? 'exists' : 'missing' ;
+if ('missing' == $conf_exists)
+	$conf_exists 				= file_exists( dirname(__FILE__) . '/' . $ConfFile) == true ? 'exists' : 'missing' ;
+if ( 'exists' == $conf_exists)
+	$Conf 					= Spyc::YAMLLoad( $ConfFile );
+else
+	$Conf 					= array();
+$Conf = array_merge($Conf,$BaseConf);
+
+
+if ( ! $Base->red_a( $Conf, 'license_text', null ) ) {
+	$Conf['license_text'] 	= file_get_contents( dirname( __FILE__ ) . "/license.txt" );
+	$Conf['license_url']	= "http://opensource.org/licenses/MIT";
+}
+if ( ! $Base->red_a( $Conf, 'copyright_year', null ) ) {
+	$Conf['copyright_year']	= date("Y",time());
+}
+if ( ! $Base->red_a( $Conf, 'copyright_holder', null ) ) {
+	$Conf['copyright_holder'] = $Base->red_a( $Conf, 'author','');
+}
+$Conf['actions'] = $Base->red_a( $Conf, 'actions', array());
+$Conf['filters'] = $Base->red_a( $Conf, 'filters', array());
+
+/*
+ * The license text can be set in the config file my-plugin.wcb
+*/
+$license_text_lines = explode("\n",$Conf['license_text']);
+$Conf['license_text'] = "";
+foreach ( $license_text_lines as $line ) {
+	$Conf['license_text'] .= " * $line\n";	
+}
+/*
+ * Setup default template values in case they were't set in 
+ * the confi file.
+*/
+$Conf['plugin_prefix'] = $Base->red_a( $Conf, 'plugin_prefix', $Conf['plugin_name'] . '-');
+$Conf['plugin_menu_name'] = $Base->red_a( $Conf, 'plugin_menu_name', $Conf['plugin_name']);
+$Conf['plugin_menu_title'] = $Base->red_a( $Conf, 'plugin_menu_title', $Conf['plugin_name']);
+$Conf['text_domain'] = $Base->red_a( $Conf, 'text_domain', $Conf['plugin_name']);
+$Conf['base_class'] = $Base->red_a( $Conf, 'base_class', $Conf['class_name'] . "_Base");
+
+function write( $path, $content ) {
+	$fp = fopen( $path, 'w+' );
+	if (! $fp ) {
+		die("Could not open: $path for writing\n");
+	}
+	fwrite( $fp, $content );
+	fclose( $fp );
+}
+function show_header() {
+	global $Version;
+	global $ConfFile;
+	global $Conf;
+	global $Base;
+	$conf_as_string = var_export($Conf,true);
+	echo <<<EOT
+/*
+ *  WooCommerce Base Plugin Generator Version: $Version
+ *           Plugin: {$Conf['plugin_name']}
+ *        Main File: {$Conf['main_file']}
+ *        Conf File: $ConfFile ($conf_exists)
+ *  PluginClassFile: {$Conf['class_file']}
+ *  PluginClassName: {$Conf['class_name']}	
+ *           Author: {$Conf['author']}
+ *   Copyright Year: {$Conf['copyright_year']}
+ * Copyright Holder: {$Conf['copyright_holder']}
+ *  	   License Url: {$Conf['license_url']}
+ * License Text ---
+{$Conf['license_text']}
+
+
+EOT;
+	echo " * ACTIONS \n";
+	foreach ( $Base->red_a($Conf,'actions',array()) as $action ) {
+		echo " *\t- $action\n";
+	}
+	echo " * FILTERS \n";
+	foreach ( $Base->red_a($Conf,'filters',array()) as $filter ) {
+		echo " *\t- $filter\n";
+	}
+echo "*/\n";
+}
+
+
+show_header();
+
+if ($Base->red_in_array('--dry-run',$Args)) {
+	touch( dirname( __FILE__ ) . "/.{$Conf['plugin_name']}.dry_run" );
+	echo "Dry Run Complete.\n";
+	exit;
+}
+if ( ! file_exists( dirname( __FILE__ ) . "/.{$Conf['plugin_name']}.dry_run" ) ) {
+	echo "Please do a dry run first by passing the argument --dry-run\n";
+	die();
+}
+
+$target = "./{$Conf['plugin_name']}";
+
+/* First, let's make the target directory */
+shell_exec("mkdir -p $target");
+
+/* Then copy over the skel directory */
+shell_exec("cp -fr " . dirname( __FILE__ ) . "/skel/* $target");
+
+/* Copy over and rename the base class */
+$base_class = file_get_contents( dirname( __FILE__ ) . '/classes/class-rede-base.php');
+$base_class = str_replace('REDE_Base', $Conf['base_class'], $base_class);
+$Conf['base_class_path'] = $Base->red_class_fileify($Conf['base_class']);
+write($target . "/classes/{$Conf['base_class_path']}",$base_class);
+
+
+
+/* Compile the main file, and write it to the directory*/
+$main_file = $Base->red_render_template("main_file.php",$Conf);
+write($target . "/" . $Conf['main_file'], "<?php\n" . $main_file );
+
+
+/* Compile the class file */
+$class_file = $Base->red_render_template("class_file.php",$Conf);
+write($target . "/classes/" . $Conf['class_file'], "<?php\n" . $class_file );
+
+
+/* Compile the actions */
+$actions_file = $Base->red_render_template("actions.php",$Conf);
+write($target . "/config/actions.php", "<?php\n" . $actions_file );
+
+/* Compile the filters */
+$filters_file = $Base->red_render_template("filters.php",$Conf);
+write($target . "/config/filters.php", "<?php\n" . $filters_file );
+
+echo "Done\n";

@@ -1,0 +1,31 @@
+description: This is an example plugin
+url: http://github.com/jasonknight/woocommerce-base
+author: Jason Knight
+author_url: http://red-e.eu
+plugin_menu_name: My Plugin
+plugin_menu_title: My Plugin Settings
+filters:
+  - woocommerce_admin_order_actions
+actions:
+  - woocommerce_admin_attribute_types
+settings:
+  main:
+    title: Main Settings
+    settings:
+      one:
+        name: api_id
+        label: API ID
+        type: string
+        classes: red-wide
+        id: apid_id
+      two:
+        name: api_key
+        label: API Key
+        type: string
+        classes: red-wide
+        id: apikey_id
+      three:
+        name: default_tic
+        label: Default TIC
+        type: string
+        id: tic_id
