@@ -366,6 +366,7 @@ class REDEBase {
 		}
 	}
 	
+
 	/**
 	 * Add or update user meta.
 	 *
@@ -784,7 +785,7 @@ class REDEBase {
 		$name = $this->red_a($args,'name');
 		$content = $this->red_a($args,'label');
 		$classes = $this->red_a($args,'classes','');
-		return "<label for='" . esc_attr( $name ) . "' class='" . esc_attr( $classes ) . "'>" . esc_html( $content ) . "</label>";
+		return "<label for='" . esc_attr( $name ) . "' class='red-label " . esc_attr( $classes ) . "'>" . esc_html( $content ) . "</label>";
 	}
 	public function red_input_tag( $args, $wrap = null ) {
 
@@ -870,6 +871,32 @@ class REDEBase {
 		$content .= "</select>\n";
 		return $content;
 	} 
+	public function red_chosen( $id ) {
+		return "<script type='text/javascript'>
+			jQuery('#{$id}').chosen({width: '95%', 'no_results_text': '" . __('No results', $this->td) . "'});
+		</script>
+		<style>
+		.chzn-container .chzn-results {
+			width: 95%;
+		}
+		</style>";
+	}
+	public function red_chosen_for_input( $id, $input_id ) {
+		$js_func_name = $this->red_classify( $this->prefix ."chosen_for_".$input_id );
+		return "
+		<script type='text/javascript'>
+		function {$js_func_name}(){
+			jQuery('#{$input_id}').val( jQuery('#{$id}').val() );
+		}
+		jQuery('#{$id}').chosen({width: '95%', 'no_results_text': '" . __('No results', $this->td) . "'}).change({$js_func_name});
+		</script>
+		<style>
+		.chzn-container .chzn-results {
+			width: 95%;
+		}
+		</style>
+		";
+	}
 	public function red_to_std($arr) {
 		$obj = new stdClass();
 		foreach ( $arr as $key=>$value ) {
