@@ -1,3 +1,4 @@
+namespace REDE;
 /*
 Plugin Name: <?php echo $plugin->red_titleize($plugin_name); ?> 
 Plugin URI: <?php echo $url; ?> 

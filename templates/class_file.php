@@ -1,3 +1,4 @@
+namespace REDE;
 /**
 <?php echo $license_text ?>
  *
@@ -19,7 +20,9 @@ class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 		$this->prefix    	= '<?php echo $plugin_prefix ?>';
 		$this->menu_name   	= '<?php echo $plugin_menu_name ?>';
 		$this->menu_title  	= '<?php echo $plugin_menu_title ?>';
-		
+		$this->author 		= '<?php echo $author ?>';
+		$this->plugin_url 	= '<?php echo $url ?>';
+		$this->author_url 	= '<?php echo $author_url ?>';
 		add_action( 'init', array( $this, 'init' ) );
 
 
@@ -40,27 +43,35 @@ class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 		
 	}
 	public function init_settings() {
-		$this->settings_sections = array(
-			<?php 
-				echo "'" . join("','", array_keys($settings)) . "'";
-			 ?> 
-		);
 		<?php 
-			$_text = var_export($settings,true);
-			$_lines = explode("\n",$_text);
-			$_text = array();
+			if ( isset($settings) ) {
+				?>
+					$this->settings_sections = array(
+					<?php 
+						echo "'" . join("','", array_keys($settings)) . "'";
+					 ?> 
+				);
+				<?php 
+					$_text = var_export($settings,true);
+					$_lines = explode("\n",$_text);
+					$_text = array();
 
-			for ($x = 0; $x < count($_lines); $x++) { 
-				$_line = $_lines[$x];
-	     		if ( $x > 0 && $x != count($_lines) - 1)
-					$_text[] = "\t\t\t" . $_line;
-				else if ($x == count($_lines) - 1)
-					$_text[] = "\t\t" . $_line;
-				else 
-					$_text[] = $_line;
+					for ($x = 0; $x < count($_lines); $x++) { 
+						$_line = $_lines[$x];
+			     		if ( $x > 0 && $x != count($_lines) - 1)
+							$_text[] = "\t\t\t" . $_line;
+						else if ($x == count($_lines) - 1)
+							$_text[] = "\t\t" . $_line;
+						else 
+							$_text[] = $_line;
+					}
+				?>
+				$this->settings_fields = <?php echo join("\n",$_text) ?>;
+				<?php
+			} else {
+				echo "// no settings";
 			}
 		?>
-		$this->settings_fields = <?php echo join("\n",$_text) ?>;
 	}
 	public function action_enqueue_scripts() {
 
@@ -77,12 +88,27 @@ class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 		);
 
 	}
+	public function rede_splash_page() {
+		echo '<iframe src="http://thebigrede.net/plugin_splash.php" width="100%" height="100%"></iframe>';
+	}
 	public function action_admin_menu() {
 
 		// This sets up your settings page.
-
+		if ( !defined('REDE_ADMIN_MENU') ) {
+			add_menu_page( 
+				"Red ( E ) Tools", 
+				"Red ( E ) Tools", 
+				'manage_options', 
+				'rede-admin-menu', 
+				array($this,'rede_splash_page'),
+				'',
+				50
+			);
+			define('REDE_ADMIN_MENU',true);
+		}
+		
 		add_submenu_page(
-			'woocommerce',
+			'rede-admin-menu',
 			$this->menu_title,
 			$this->menu_name,
 			'manage_options',
@@ -92,13 +118,33 @@ class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 
 	}
 	public function render_admin_options_page() {
-		/* Save posted options? */
-		if ( $this->red_a($_POST, $this->prefix.'settings',false) ) { // will be true if set :)
-			update_option($this->prefix.'settings', $_POST[$this->prefix.'settings'] );
-			$this->settings = $_POST[ $this->prefix.'settings' ];
-		}
-		echo $this->red_render_template("admin/admin_settings_page.php", array());
+		<?php 
+			if ( isset($settings) ) {
+		?>
+			/* Save posted options? */
+			if ( $this->red_a($_POST, $this->prefix.'settings',false) ) { // will be true if set :)
+				update_option($this->prefix.'settings', $_POST[$this->prefix.'settings'] );
+				$this->settings = $_POST[ $this->prefix.'settings' ];
+			}
+			if ( $this->red_a($_REQUEST,'show_help',false) ) {
+				echo $this->red_render_template("admin/admin_help_page.php", array());
+			} else {
+				echo $this->red_render_template("admin/admin_settings_page.php", array());
+			}
+		<?php
+			}
+		?>
+		<?php 
+			// Now, handle Control Panel
+			if ( isset($Conf["control_panel"] ) ) {
+				if ( isset($Conf['control_panel']['tabs']) ) {
+					$tabs = $Conf['control_panel']['tabs'];
+				}
+			}
+		?>
+		
 	}
+
 <?php 
 	foreach ( $actions as $action ) {
 		echo $this->red_render_template('_action_function.php', array( 'action' => $action ) );

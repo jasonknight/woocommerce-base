@@ -22,7 +22,7 @@ namespace REDE;
  * THE SOFTWARE.
  *
  *
- * @package     REDEBase
+ * @package     WC_Xml_ExportBase
  * @author      Jason Knight
  * @copyright   Copyright (c) 2013, Red(E) Tools Ltd.
  * @license    	http://opensource.org/licenses/MIT
@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * @since 1.0
  */
 require_once dirname( __FILE__ ) . '/class-rede-markdown.php';
-class REDEBase {
+class WC_Xml_ExportBase {
 
 	/** @var string, the name of this plugin, to be set in the inheriting class */
 	public $name;
@@ -246,7 +246,7 @@ class REDEBase {
 			$tmp_key = str_replace('_','-',$key);
 			$fname =  $this->red_class_fileify($tmp_key);//"class-{$tmp_key}-validator.php";
 			$class_name = $this->red_classify($fname);//"{$tmp_key}Validator";
-			REDEBase::debug("class name to load is {$class_name}");
+			WC_Xml_ExportBase::debug("class name to load is {$class_name}");
 			$path = $this->findClassFile($fname, false);
 			if ( $path ) {
 				require_once $path;
@@ -679,7 +679,7 @@ class REDEBase {
 	      } else if ( strpos( $template_name, '.md') !== false ) {
 	      	// We want to support php in the template
 	      	$template_file_contents = $this->red_render_template($template_name, $original_vars_in_scope, true);
-	      	echo REDE_Markdown( $template_file_contents );
+	      	echo WC_Xml_ExportMarkdown( $template_file_contents );
 	      } else {
 	      	include $template_path; // support any kind of template but without special treatment
 	      }
