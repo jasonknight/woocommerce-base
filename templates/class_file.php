@@ -13,6 +13,7 @@ require_once dirname( __FILE__ ) . '/<?php echo $base_class_path ?>';
 
 class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 	public $settings_sections;
+	public $control_panel;
 	public function __construct() {
 
 		$this->name 		= '<?php echo $plugin_name ?>';
@@ -43,35 +44,25 @@ class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 		
 	}
 	public function init_settings() {
+
 		<?php 
 			if ( isset($settings) ) {
 				?>
-					$this->settings_sections = array(
-					<?php 
-						echo "'" . join("','", array_keys($settings)) . "'";
-					 ?> 
-				);
-				<?php 
-					$_text = var_export($settings,true);
-					$_lines = explode("\n",$_text);
-					$_text = array();
-
-					for ($x = 0; $x < count($_lines); $x++) { 
-						$_line = $_lines[$x];
-			     		if ( $x > 0 && $x != count($_lines) - 1)
-							$_text[] = "\t\t\t" . $_line;
-						else if ($x == count($_lines) - 1)
-							$_text[] = "\t\t" . $_line;
-						else 
-							$_text[] = $_line;
-					}
-				?>
-				$this->settings_fields = <?php echo join("\n",$_text) ?>;
+				$this->settings_fields = json_decode('<?php echo REDE\REDEBase::red_indent(json_encode($settings, JSON_PRETTY_PRINT),"\t\t") ?>',true);
 				<?php
 			} else {
-				echo "// no settings";
+				echo "// no settings\n";
+				$this->settings = array('enabled' => 'yes');
+			}
+			if ( isset($control_panel) ) {
+				?>
+
+		$this->control_panel = json_decode('<?php echo REDE\REDEBase::red_indent(json_encode($control_panel, JSON_PRETTY_PRINT),"\t\t") ?>',true);
+
+				<?php
 			}
 		?>
+
 	}
 	public function action_enqueue_scripts() {
 
@@ -135,11 +126,14 @@ class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 			}
 		?>
 		<?php 
-			// Now, handle Control Panel
-			if ( isset($Conf["control_panel"] ) ) {
-				if ( isset($Conf['control_panel']['tabs']) ) {
-					$tabs = $Conf['control_panel']['tabs'];
-				}
+			if ( isset($control_panel) ) {
+		?>
+			if ( $this->red_a($_REQUEST,'show_help',false) ) {
+				echo $this->red_render_template("admin/admin_help_page.php", array());
+			} else {
+				echo $this->red_render_template("admin/control_panel.php", array());
+			}
+		<?php
 			}
 		?>
 		
@@ -153,6 +147,20 @@ class <?php echo $class_name ?> extends <?php echo $base_class ?> {
 <?php 
 	foreach ( $filters as $filter ) {
 		echo $this->red_render_template('_filter_function.php', array( 'filter' => $filter ) );
+	}
+?>
+<?php 
+	if ( isset($control_panel) ) {
+		if ( isset($control_panel['tabs']) ) {
+			$tabs = $control_panel['tabs'];
+			foreach ( $tabs as $id=>$desc ) {
+?>
+	public function <?php echo $desc['content'] ?>() {
+		echo __("Tab Content is not yet defined!",$this->td);
+	}
+<?php
+			}
+		}
 	}
 ?>
 }

@@ -5,6 +5,7 @@ add_action( 'wp_head', array( $this, 'red_wp_head' ) );
 add_action( 'admin_head', array( $this, 'red_wp_admin_head' ) );
 <?php 
 	foreach ( $actions as $action ) {
-		echo "add_action( '$action', array( \$this, 'action_$action') );";
+		$action_for_func = str_replace('-','_',$action);
+		echo "add_action( '$action', array( \$this, 'action_$action_for_func') );\n";
 	}
 ?>

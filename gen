@@ -49,7 +49,7 @@ foreach ( $license_text_lines as $line ) {
  * Setup default template values in case they were't set in 
  * the confi file.
 */
-$Conf['plugin_prefix'] = $Base->red_a( $Conf, 'plugin_prefix', $Conf['plugin_name'] . '-');
+$Conf['plugin_prefix'] = str_replace('-','_',$Base->red_a( $Conf, 'plugin_prefix', $Conf['plugin_name'] . '_'));
 $Conf['plugin_menu_name'] = $Base->red_a( $Conf, 'plugin_menu_name', $Conf['plugin_name']);
 $Conf['plugin_menu_title'] = $Base->red_a( $Conf, 'plugin_menu_title', $Conf['plugin_name']);
 $Conf['text_domain'] = $Base->red_a( $Conf, 'text_domain', $Conf['plugin_name']);

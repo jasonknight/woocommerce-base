@@ -22,13 +22,13 @@ namespace REDE;
  * THE SOFTWARE.
  *
  *
- * @package     REDEBase
+ * @package     WC_Multi_MetaBase
  * @author      Jason Knight
  * @copyright   Copyright (c) 2013, Red(E) Tools Ltd.
  * @license    	http://opensource.org/licenses/MIT
  */
 
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+//if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 
 /**
  * Red(E) Tools WooCommerce Plugin Base Clase
@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
  * @since 1.0
  */
 require_once dirname( __FILE__ ) . '/class-rede-markdown.php';
-class REDEBase {
+class WC_Multi_MetaBase {
 
 	/** @var string, the name of this plugin, to be set in the inheriting class */
 	public $name;
@@ -84,7 +84,7 @@ class REDEBase {
 		$this->paths->js_url 			= $this->red_join("/", plugins_url(), $this->name, "assets", "javascripts") . "/";
 		$this->paths->css_url 			= $this->red_join("/", plugins_url(), $this->name, "assets", "stylesheets") . "/";
 		$this->paths->data_url 			= $this->red_join("/", plugins_url(), $this->name, "assets", "data") . "/";
-	    
+	    $this->paths->url 				= $this->red_join("/", plugins_url(), $this->name);
 	    $wp_template     	 			= get_template();
 	    $this->paths->wp_theme_root    	= get_theme_root( $wp_template );
 
@@ -246,7 +246,7 @@ class REDEBase {
 			$tmp_key = str_replace('_','-',$key);
 			$fname =  $this->red_class_fileify($tmp_key);//"class-{$tmp_key}-validator.php";
 			$class_name = $this->red_classify($fname);//"{$tmp_key}Validator";
-			REDEBase::debug("class name to load is {$class_name}");
+			WC_Multi_MetaBase::debug("class name to load is {$class_name}");
 			$path = $this->findClassFile($fname, false);
 			if ( $path ) {
 				require_once $path;
@@ -361,7 +361,7 @@ class REDEBase {
 	 * @param string key name
 	 * @param mixed value
 	 */
-	public function red_add_post_meta($post_id, $meta_key, $meta_value) {
+	public static function red_add_post_meta($post_id, $meta_key, $meta_value) {
 		if ( ! add_post_meta( $post_id, $meta_key, $meta_value, true ) ) {
 			update_post_meta( $post_id, $meta_key, $meta_value );
 		}
@@ -502,7 +502,7 @@ class REDEBase {
 	 * @param mixed default value if not found
 	 * @return mixed
 	 */
-	public function red_a($arr, $key, $default=null) {
+	public static function red_a($arr, $key, $default=null) {
 		if ( isset( $arr[$key] ) ) {
 			return $arr[$key];
 		}
@@ -588,16 +588,12 @@ class REDEBase {
 		$name = str_replace(' ','_',$name);
 		return $name;
 	}
-	/**
-	 * Converts a string into it's snake cased equivalent
-	 *
-	 * @since 1.0
-	 * @param string file basename
-	 * @return string in snake case
-	 */
 	public static function red_snake_case($str) {
 		$str = strtolower($str);
-		preg_replace("/[^a-z]/g", "_", $str);
+		$reps = array(' ','-','"');
+		foreach ( $reps as $r ) {
+			$str = str_replace($r, '_', $str);
+		}
 		return $str;
 	}
 	/**
@@ -696,7 +692,7 @@ class REDEBase {
 	      } else if ( strpos( $template_name, '.md') !== false ) {
 	      	// We want to support php in the template
 	      	$template_file_contents = $this->red_render_template($template_name, $original_vars_in_scope, true);
-	      	echo REDE_Markdown( $template_file_contents );
+	      	echo WC_Multi_MetaMarkdown( $template_file_contents );
 	      } else {
 	      	include $template_path; // support any kind of template but without special treatment
 	      }

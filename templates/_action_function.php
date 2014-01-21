@@ -4,7 +4,7 @@
 	 * @param
 	 * @return 
 	 */
-	public function action_<?php echo $action ?>( $arg1 ) {
+	public function action_<?php echo str_replace("-","_", $action) ?>( $arg1 ) {
 		global $woocommerce, $user_ID;
 		if ( !isset($this->settings['enabled']) || $this->settings['enabled'] != 'yes') 
 	 		return;
